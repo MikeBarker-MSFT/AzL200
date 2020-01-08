@@ -1,0 +1,25 @@
+﻿@{
+    System.Random random = new System.Random();
+    string pushValue = random.Next(0, 100).ToString();
+}
+
+<h2>List</h2>
+@if (!string.IsNullOrEmpty(ViewBag.PopValue))
+{
+<h3>Popped: @ViewBag.PopValue</h3>
+}
+
+<form asp-action="Pop" asp-controller="Redis" method="post">
+    <button type="submit">Pop</button>
+</form>
+
+@foreach(string item in ViewBag.List)
+{
+    <p>@item</p>
+}
+
+<form asp-action="Push" asp-controller="Redis" method="post">
+    <input asp-for="@pushValue" autofocus />
+
+    <button type="submit">Push</button>
+</form>

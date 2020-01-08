@@ -1,0 +1,11 @@
+﻿@{
+    string cacheValue = "";
+}
+
+<h2>Update cache</h2>
+
+<form asp-action="Update" asp-controller="Redis" method="post">
+    <input asp-for="@cacheValue" />
+
+    <button type="submit">Save</button>
+</form>
