@@ -80,6 +80,7 @@ This makes it easier to visualise and correlate peaks between the graphs.
 In the Thread Count metric we currently have the aggregation set to **Avg**. What does this mean? Azure Monitor receives metrics as a list of entries which comprise of a metric name, time, and value (other fields are included but these are relevant for this discussion).
 
 We might get a list of underlying metric data similar to:
+
 | Metric       | Time                    | Value   |
 | ------------ | ----------------------- | ------: |
 | Thread Count | 2000-01-01 18:54:02.789 | 60      |
@@ -94,6 +95,7 @@ We might get a list of underlying metric data similar to:
 When we select the time scale, we also select the granularity (e.g. defaults to 1 minute when viewing a 30 min scale). This defines a windowing used to group metric entries together, in order to be displayed meaningfully in the charts. Because we now have multiple values which need to displayed as a single plot point, we need an aggregation function to combine these together.
 
 Assuming a 1 minute granularity, if we select average (i.e. Avg) this will produce plot points for:
+
 | Metric       | Time             | Avg     |
 | ------------ | ---------------- | ------: |
 | Thread Count | 2000-01-01 18:54 | 60.333  |
@@ -101,6 +103,7 @@ Assuming a 1 minute granularity, if we select average (i.e. Avg) this will produ
 | Thread Count | 2000-01-01 18:56 | 62.000  |
 
 But what about the other aggregations? Here is the complete set:
+
 | Metric       | Time             | Count   | Avg     | Min     | Max     | Sum     |
 | ------------ | ---------------- | ------: | ------: | ------: | ------: | ------: |
 | Thread Count | 2000-01-01 18:54 | 3       | 60.333  | 60      | 61      | 181     |
