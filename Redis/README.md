@@ -222,7 +222,7 @@ Redis can store Strings, Lists, Sets, and Geo-spatial data. We've already explor
 
 A Redis list is an ordered array of values stored under against a key. Each item in the list can be uniquely accessed using a combination of key and index. Redis provides several operations against lists; such as insert, push and pop.
 
-### Get and set a byte array in code 
+### Get and set a list in code 
 + In the **RedisController** add the following code:
 ```cs
 public async Task<IActionResult> List(string popValue)
