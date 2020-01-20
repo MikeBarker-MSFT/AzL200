@@ -456,7 +456,7 @@ This part of the Lab will be using the Azure Portal. (https://portal.azure.com)
       > *Repeat for the the second Region created in Part 4 above*
     - Change `Protocol` to `HTTP` 
     > Note: Normally HTTPS would be used, but as no certificate has been created in this Lab HTTP needs to be used.
-    - `Latency sensitivity (in milliseconds)` to 30 (To make sure when testing both regions show)
+    - `Latency sensitivity (in milliseconds)` to 5 (To make sure when testing both regions show)
     - Click `Update` to save the backend pool
 
   + **Routing Rules**
@@ -482,7 +482,8 @@ The goal here is to show Azure Front Door routing traffic seamlessly to another 
 
 To do this you'll be removing the backend pools from one of the Load Balancers and checking that the service is still up and running.
 
-- Go to one of the Load Balancers create above (From wither Region)
+- Go to one of the Load Balancers create above (From within Region)
+- Click `Load balancing rules` and delete the rule for the backend pool.
 - Click `Backend pools` and the `...` next to the pool you have.
 - Click `Delete`. Waiting for the change to complete and then test the Azure Front Door URL again and see that it's now going to the other Region only.
 
