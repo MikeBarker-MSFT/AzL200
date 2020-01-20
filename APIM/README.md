@@ -87,8 +87,8 @@ Developers who wish to use your APIs can discover what APIs and Products are ava
 
 Take some time to explore the information available in the Developer Portal. Notice the code samples 
 
-+ From the APIM **Overview** blade (left-hand menu), click on **Developer portal** (top menu)
-+ In the Developer Portal:
++ From the APIM **Overview** blade (left-hand menu), click on **Developer portal (legacy)** (top menu)
++ In the Developer Portal (legacy):
 + Click **APIS**. You will see the Customer API you created. Clicking on the Customer API will bring up a page with details about your API and code examples to run it.
 
 Take some time to explore the information available in the Developer Portal. Notice the code samples in various languages provided to call you APIs. Notice that, in the top right, you can download the API definition in Open API YAML or JSON formats.  As you provide additional information against your APIs and operations (such as descriptions and documentation) this information is reflected here to aid developers in discovering and utilising your APIs.
