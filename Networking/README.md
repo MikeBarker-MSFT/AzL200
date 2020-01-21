@@ -1,14 +1,20 @@
 # Azure Basic Networking Lab
+ 
 1. Single Linux VM with simple web site in a Vnet with NSG
-1a. Create a Linux VM with a public IP
-1b. Install Nginx and open port 80 (http). Edit homepage so you can identify the VM
+
+	1a. Create a Linux VM with a public IP
+  
+	1b. Install Nginx and open port 80 (http). Edit homepage so you can identify the VM
 
 2. Understanding Load Balancing
-2a. Install 3 servers in an Availability Set with a Public Load Balancer. Test load balancing
+
+	2a. Install 3 servers in an Availability Set with a Public Load Balancer. Test load balancing
 
 3. Multi-Region Deployment
-3a. Add 3 more servers in the same way in another Region. 
-3b. Add Azure Front Door to see global load-balancing. Test availability by turning some off
+
+	3a. Add 3 more servers in another Region. 
+	
+	3b. Add Azure Front Door to see global load-balancing. Test availability by turning some off
 
 >**Note**: For these simple examples, curl is better to see the results than opening a web browser because the browser caches the response and doesn't switch hosts nearly as easily as curl
 ---
@@ -22,18 +28,19 @@
 ## Initial Setup of Environment
 Set your own variables here. These will be used for unique naming. We use 'export' so they are available in other sessions
 - Login to Azure and open the Azure Shell to be able to run the Bash script commands in the below tasks
-- `act` is the Azure Subscription used for the lab
-- `rg` is the resource group where the resources will be created
+- `act` is the Azure Subscription used for the lab. Change the value to your own subscription ID
+- `rg` is the resource group where the resources will be created. Use a unique name (in your subscription)
 - `loc` is the region where the resources with be created
 ```bash
 export act="4a4ed193-9a6a-4413-8ee1-12b17e185e73"
-export rg="Mwc1"
+export rg="RG1"
 export loc="WestEurope"
 
 # Check that we are connected to the right Azure account
 az account list
 az account set -s $act
-az account show  
+az account show 
+
 ```
 ---
 ## Part 1a - Create a Linux VM with a public IP
@@ -51,7 +58,7 @@ az vm create \
   --generate-ssh-keys 
 
 # Copy public ip and paste in below
-ip1="65.52.140.235"
+export ip1="65.52.140.235"
 
 # Note that the default 'az vm create' command for Linux creates a VM with a public IP and a default 'allow ssh inbound from anywhere'!!!
 # Can use 'az network nsg rule' to update them: https://docs.microsoft.com/en-us/cli/azure/network/nsg/rule?view=azure-cli-latest 
@@ -59,7 +66,7 @@ ssh azureuser@$ip1
 ```
 > Tip:
 > -  Goto the Azure Portal and have a look at the resources created. 
-> -  Look a Azure `Network Watcher / Topology` to see what was created
+> -  Look at Azure `Network Watcher / Topology` to see what was created
 ---
 ## Part 1b - Show a web-page on the VM created above
 - Install Nginx and open port 80 (http)
@@ -98,14 +105,16 @@ Ref: https://docs.microsoft.com/en-us/azure/load-balancer/quickstart-load-balanc
 - Create a new resource group 
 ```bash
 # Change the Resource Group Name and Region below
-export rg="MwcWe"
+export rg="RG1-WE"
 export loc="WestEurope"
 
-#Create a Resource Group
-az group create -n $rg -l $loc
+
 ```
 - Create a Public Load Balancer. 
 ```bash
+#Create a Resource Group
+az group create -n $rg -l $loc
+
 # Create Public IP address
 az network public-ip create -g $rg -n Pip1 --sku standard
 
@@ -263,8 +272,8 @@ curl $pipwe -m 5
 > -  Look a Azure `Network Watcher / Topology` to see what was created
 ---
 ## Part 3 - Multi-Region Deployment
-Add 3 more servers in the same way as part 3 above, but in another Region.
-This is a repeat of part 3, but aiming at another Region. 
+Add 3 more servers in another Region.
+This is a repeat of part 3, but targeting another Region. 
 Ref: https://docs.microsoft.com/en-us/azure/load-balancer/quickstart-load-balancer-standard-public-cli 
 
 - Change the Resource Group Name and Region below. Key to have a new Resource Name and different Region from Step 3. 
@@ -273,11 +282,12 @@ Ref: https://docs.microsoft.com/en-us/azure/load-balancer/quickstart-load-balanc
 export rg="MwcNe"
 export loc="NorthEurope"
 
-#Create a Resource Group
-az group create -n $rg -l $loc
 ```
 - Create a Public Load Balancer.
 ```bash
+#Create a Resource Group
+az group create -n $rg -l $loc
+
 # Create Public IP address
 az network public-ip create -g $rg -n Pip1 --sku standard
 
@@ -474,8 +484,9 @@ This part of the Lab will be using the Azure Portal. (https://portal.azure.com)
 ### Test Azure Front Door 
 Follow the steps below to test the service. If The above setup can take a few minutes to complete. If you get `*Out services aren't available right now*` wait a few minutes for it to become available.
 - To test copy the `Frontend host` URL (e.g. https://<name>.azurefd.net)
-- Go to a web browser and paste it in. Before pressing enter. Please change it to HTTP (e.g.  http://<name>.azurefd.net)
+- Go to a web browser and paste it in. Before pressing enter, please change it to HTTP (e.g.  http://<name>.azurefd.net)
 - See that the web page opens. Try reloasing a few times to see it jump between the 2 regions.
+- You can also do this through curl, from your own machine or cloud shell.
 
 ### Test by removing Backend pools from one of the the Load Balancers
 The goal here is to show Azure Front Door routing traffic seamlessly to another Region when a Backend poll goes down.
@@ -486,7 +497,7 @@ To do this you'll be removing the backend pools from one of the Load Balancers a
 - Click `Load balancing rules` and delete the rule for the backend pool.
 - Click `Backend pools` and the `...` next to the pool you have.
 - Click `Delete`. Waiting for the change to complete and then test the Azure Front Door URL again and see that it's now going to the other Region only.
-
+- You can also just shutdown one or a few of the VMs to simulate a failure.
 ---
 
 Thank You for going through this Lab. 
