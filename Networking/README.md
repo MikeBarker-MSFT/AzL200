@@ -467,7 +467,7 @@ This part of the Lab will be using the Azure Portal. (https://portal.azure.com)
       > *Repeat for the the second Region created in Part 4 above*
     - Change `Protocol` to `HTTP` 
     > Note: Normally HTTPS would be used, but as no certificate has been created in this Lab HTTP needs to be used.
-    - `Latency sensitivity (in milliseconds)` to 5 (To make sure when testing both regions show)
+    - `Latency sensitivity (in milliseconds)` to 500 (To make sure when testing both regions show). This is the minimum latency for it to include a back-end in the round robin.
     - Click `Update` to save the backend pool
 
   + **Routing Rules**
