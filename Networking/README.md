@@ -264,7 +264,8 @@ az vm list -g $rg -d --output table
 #Get the Public IP Address for the Load Balancer
 pipwe=$(az network public-ip show -g $rg -n Pip1 --query [ipAddress] --output tsv) ; echo $pipwe
 
-#Test the Load Balancer. Run this a number of times to set different VM's being served up.
+#Test the Load Balancer. Run this a number of times to see different VM's being served up.
+#While the web server is starting you may get a 'bad gateway' error but keep trying
 curl $pipwe -m 5
 ```
 > Tip:
