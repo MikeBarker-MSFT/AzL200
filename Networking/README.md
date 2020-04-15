@@ -228,10 +228,11 @@ az extension add --name front-door
 # Set this to the name of your Front Door
 export afd=mwcafd1
 
-# TO DO - still have to build the AFD CLI part - I did it in portal for now
-# Remember to set back-end timeout to > 100ms so that it round robins across Regions
-az network front-door create -g $rg -n $afd --backend-address $pip1
+az network front-door create -g $rg -n $afd --backend-address $pip1 --interval 5 --protocol http 
 
+az network front-door load-balancing create -g $rg -f $afd -n DefaultLoadBalancingSettings --sample-size 1 --successful-samples-required 1 --additional-latency 500
+
+az network front-door backend-pool backend add -g $rg -f $afd --pool-name DefaultBackendPool --address $pip2
 
 # ----------------- Test Front Door -----------------------------
 
