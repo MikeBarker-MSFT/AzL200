@@ -1,5 +1,6 @@
 # Previous source for Nationwide https://github.com/MikeBarker-MSFT/AzL200
 # Mike's updates https://github.com/MikeWedderburn-Clarke/AzL200/edit/master/Networking/README.md
+# You MUST update the 'unique' in 'Variables' to ensure no conflict with other DNS names 
 
 # ----------- Cloud Drive --------------
 # If you are using the Azure Cloud Shell and you haven't used it before, you will need to set up your Cloud Drive.
@@ -9,6 +10,33 @@ cd ~/clouddrive
 mkdir networking101
 cd networking101
 
+# ------------ Variables -----------------------------
+#Use export to declare variables so they can be re-used
+
+#All Resources will be created in this Resource Group
+export rg="1LbAndFrontDoor"
+
+# Unique 4 characters - used to create public DNS names 
+export unique="mawc"
+
+# We will create resources in 2 Azure Regions. By default WestEurope and NorthEurope but you can use others
+export loc1="westeurope"
+# Short code for location - will be appended to resource names
+export locs1="weu"
+
+export loc2="northeurope"
+export locs2="neu"
+
+# ----------- Test uniqueness ----------
+
+# These must fail to resolve or else you will get deployment errors due to name conflicts
+export dns1="vmss-"$unique"."$loc1".cloudapp.azure.com"
+export dns2="vmss-"$unique"."$loc2".cloudapp.azure.com"
+export afd=$unique"afd1"
+
+nslookup $dns1
+nslookup $dns2
+nslookup $afd.azurefd.net
 
 # ----------- Subscription -------------
 #Check which Azure Subscription you are connected to
@@ -18,16 +46,10 @@ az account show
 az account list
 az account set -s $SubscriptionId
 
-# ------------ Variables -----------------------------
-#Use export to declare variables so they can be re-used
+# ------------ Region 1 -------------------------
 
-#All Resources will be created in this Resource Group
-export rg="1LbAndFrontDoor"
-
-# We will create resources in 2 Azure Regions. By default WestEurope and NorthEurope but you can use others
-export loc="WestEurope"
-# Short code for location - will be appended to resource names
-export locs="WEU"
+export loc=$loc1
+export locs=$locs1 
 
 #Create a Resource Group
 az group create -n $rg -l $loc
@@ -85,43 +107,6 @@ runcmd:
 # ------------- MAIN -----------------------------
 
 
-
-# Create Public IP address
-az network public-ip create -g $rg -l $loc -n Pip1-$locs --sku standard
-
-# Create Standard Load Balancer with public IP (better than basic LB)
-az network lb create \
-    -g $rg \
-    -l $loc \
-    -n SLB1-$locs \
-    --sku standard \
-    --public-ip-address Pip1-$locs \
-    --frontend-ip-name Fe1 \
-    --backend-pool-name Be1
-
-# Create health probe to check that VMs are serving the desired resource before sending them traffic
-az network lb probe create \
-    -g $rg \
-    -n Probe1-$locs \
-    --lb-name SLB1-$locs \
-    --protocol http \
-    --port 80 \
-    --path / \
-    --interval 5
-
-# Create load balancing rule
-az network lb rule create \
-    -g $rg \
-    -n HttpRule1-$locs \
-    --lb-name SLB1-$locs \
-    --protocol tcp \
-    --frontend-port 80 \
-    --backend-port 80 \
-    --frontend-ip-name Fe1 \
-    --backend-pool-name Be1 \
-    --probe-name Probe1-$locs
-
-Create a Virtual Network with Network Security Groups plus Network cards. The VM's will be created later
 # Create a VNet to host the VM's being created in the next steps
 az network vnet create \
     -g $rg \
@@ -133,13 +118,13 @@ az network vnet create \
 az network nsg create \
     -g $rg \
     -l $loc \
-    -n NSGWeb1-$locs
+    -n NSG-$locs
 
-#Create a NSG rule to allow inbound http traffic
+#Create a NSG rule to allow inbound http traffic 
 az network nsg rule create \
     -g $rg \
     -n Http \
-    --nsg-name NSGWeb1-$locs \
+    --nsg-name NSG-$locs \
     --protocol tcp \
     --direction inbound \
     --source-address-prefix '*' \
@@ -149,75 +134,78 @@ az network nsg rule create \
     --access allow \
     --priority 200
 
-# Create 3x Network Cards for the VM's being created next. 
-# They are linked to the Vnet, default Subnet, NSG and Load Balancer created above.
-for i in {1..3}; do
-    az network nic create \
-        -g $rg \
-        -l $loc \
-        -n NicVm$i-$locs \
-        --vnet-name Vnet1-$locs \
-        --subnet Subnet1 \
-        --network-security-group NSGWeb1-$locs \
-        --lb-name SLB1-$locs \
-        --lb-address-pools Be1 \
-        --no-wait
-done
-
-# Check if all 3 nics have been created (because we used --no-wait)
-az network nic list -g $rg --output table
-
-Create Availability Set and VM's
-#Create Availability Set for the VM's plus simple Web Page
-az vm availability-set create \
-   -g $rg \
-   -l $loc \
-   -n AvSet1-$locs
-
-
-# Creates the 3 VMs using the cloud-init above and --no-wait to make it faster.
-for i in {1..3}; do
-    az vm create \
+# Create a VM Scale Set  https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/quick-create-cli 
+# You can open the Azure portal and look in the Resource Group you created to see the resources getting created. Click 'Deployments' to see the steps taken
+# Using --verbose with this one so we can see in console exactly what it is doing
+az vmss create \
     -g $rg \
+    -n $locs \
     -l $loc \
-    -n VM$i-$locs \
-    --availability-set AvSet1-$locs \
-    --nics NicVm$i-$locs \
-    --size Standard_B1s \
     --image UbuntuLTS \
-    --generate-ssh-keys \
+    --instance-count 3 \
+    --lb-sku Standard \
+    --vnet-name Vnet1-$locs \
+    --subnet Subnet1 \
     --custom-data cloud-init.txt \
-    --no-wait
-done
+    --vm-sku Standard_B1s \
+    --nsg NSG-$locs \
+    --public-ip-address-dns-name "vmss-"$unique \
+    --verbose
 
-# Check if all 3 VMs have been created. Even after they have started it will take a few minutes for the web page to show.
-az vm list -g $rg -d --output table
+# Add an HTTP probe to the load balancer so it checks the backend health
+az network lb probe create \
+    -g $rg \
+    -n HttpProbe \
+    --lb-name $locs"LB" \
+    --protocol http \
+    --port 80 \
+    --path / \
+    --interval 5 \
+    --threshold 2
+
+# Update Load Balancing rule to use the new health probe 
+az network lb rule update \
+    -g $rg \
+    -n LBRule \
+    --lb-name $locs"LB" \
+    --probe-name HttpProbe
+
+
+# Check the progress of deployment
+az vmss list-instances -g $rg -n $locs -o table
 
 # ---------------- Test Load Balancing in Region 1 -----------------
 
-#Get the Public IP Address for the Load Balancer
-pip1=$(az network public-ip show -g $rg -n Pip1-$locs --query [ipAddress] --output tsv) ; echo "Pip1 = "$pip1
+# Even after instances are all deployed it will take a minute or 2 before they start accepting connections - this is while the cloud-init builds
+# If you didn't add a health probe, you will see "connection refused" at first and then "Bad Gateway" for short while and then it should start working
+# If you did add the health probe it will just return "connection timed out" until it starts working 
+
+# dns for region 1
+export dns1="vmss-"$unique"."$loc".cloudapp.azure.com"
 
 # Use this 'For' loop to test connecting to the public IP 20 times
 # You should be load balanced between the VMs
-for i in {1..20}; do curl $pip1 -m 1; echo -n $'\r\f'; sleep 0.1; done
+for i in {1..20}; do curl $dns1 -m 1; echo -n $'\r\f'; sleep 0.1; done
 
-# ----------------- Other Region ------------------------------------
 
-# Now change the location variables to another Region and run MAIN again to create an identical setup in another region.
-# The power of Infrastructure as Code !
 
-export loc="NorthEurope"
-export locs="NEU"
+# ----------------- Region 2 ------------------------------------
+
+# Now we change the location variables to the 2nd Region and run MAIN again to create an identical setup in another region.
+# The power of Infrastructure as Code!
+
+export loc=$loc2
+export locs=$locs2
 
 # ---------------- Test Load Balancing in Region 2 -----------------
 
-#Get the Public IP Address for the Load Balancer
-pip2=$(az network public-ip show -g $rg -n Pip1-$locs --query [ipAddress] --output tsv) ; echo "Pip2 = "$pip2
+
+# Even after instances are all deployed it will take a minute or 2 before they start accepting connections - this is while the cloud-init builds
+# You will see "connection refused" at first and then "Bad Gateway" for short while and then it should start working
 
 # Use this 'For' loop to test connecting to the public IP 20 times
 # You should be load balanced between the VMs
-for i in {1..20}; do curl $pip2 -m 1; echo -n $'\r\f'; sleep 0.1; done
+for i in {1..20}; do curl $dns2 -m 1; echo -n $'\r\f'; sleep 0.1; done
 
 
 # ----------------- Front Door ---------------------------------
@@ -225,16 +213,23 @@ for i in {1..20}; do curl $pip2 -m 1; echo -n $'\r\f'; sleep 0.1; done
 The Azure Front Door extensions needed to be added to your Cloud Shell instance
 az extension add --name front-door
 
-# Set this to the name of your Front Door
-export afd=mwcafd1
+# Create AFD
+az network front-door create -g $rg -n $afd --backend-address $dns1 --interval 5 --protocol http 
 
-az network front-door create -g $rg -n $afd --backend-address $pip1 --interval 5 --protocol http 
-
+# Update Load Balancing rule for AFD to fail-over quicker and set the latency threshold to high enough so it will use both back-ends
 az network front-door load-balancing create -g $rg -f $afd -n DefaultLoadBalancingSettings --sample-size 1 --successful-samples-required 1 --additional-latency 500
 
-az network front-door backend-pool backend add -g $rg -f $afd --pool-name DefaultBackendPool --address $pip2
+# Add the 2nd Region to the back-end pool 
+az network front-door backend-pool backend add -g $rg -f $afd --pool-name DefaultBackendPool --address $dns2
 
 # ----------------- Test Front Door -----------------------------
 
-
+# It may take a minute or 2 for the health checks in both regions to pass and for AFD to start sending them traffic 
 for i in {1..20}; do curl $afd.azurefd.net -m 1; echo -n $'\r\f'; sleep 0.1; done
+
+
+# ----------------- Additional ----------------------------------
+
+# 1 - Try opening Network Watcher in the portal and viewing the Topolgy of your Resource Group to see the components you've deployed (doesn't show AFD yet)
+# 2 - Try scaling your VMSS out or in and see Azure adjust the load-balancing automatically
+# 3 - Try disabling one of the Backends in AFD or lower the acceptable 'latency sensitivity' to zero so it only sends traffic to the closest backend
