@@ -55,4 +55,11 @@ A series of additional steps you can take, if you have time, to explore the solu
 + Investigate Load Balancer metrics to see 'Data Path Availability' and 'Health Probe Status' to see how LB decides which backends to send traffic to. Optionally split Health Probe Status by Backend IP address
 + Add AFD metrics: Backend Health Percentage and Backend Request Latency and split by Backend 
 
+### Topology
+<img src="./topology.svg">
 
+### Load Balancer Metrics
+<img src="./LBMetrics.png">
+
+### Azure Front Door Metrics
+<img src="./AFDMetrics.png">
