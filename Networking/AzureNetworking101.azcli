@@ -1,6 +1,6 @@
-# Previous source for Nationwide https://github.com/MikeBarker-MSFT/AzL200
-# Mike's updates https://github.com/MikeWedderburn-Clarke/AzL200/edit/master/Networking/README.md
+# Code source https://github.com/MikeBarker-MSFT/AzL200
 # You MUST update the 'unique' in 'Variables' to ensure no conflict with other DNS names 
+# Simple Azure networking lab to demonstrate a simple web app in VM scale set with Azure Load Balancer, deployed in 2 Azure Regions with an Azure Front Door to load balance across all instances
 
 # ----------- Cloud Drive --------------
 # If you are using the Azure Cloud Shell and you haven't used it before, you will need to set up your Cloud Drive.
