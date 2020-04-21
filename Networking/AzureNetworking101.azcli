@@ -17,7 +17,7 @@ cd networking101
 export rg="1LbAndFrontDoor"
 
 # Unique 4 characters - used to create public DNS names 
-export unique="mawc"
+export unique="mawc1"
 
 # We will create resources in 2 Azure Regions. By default WestEurope and NorthEurope but you can use others
 export loc1="westeurope"
@@ -27,13 +27,13 @@ export locs1="weu"
 export loc2="northeurope"
 export locs2="neu"
 
-# ----------- Test uniqueness ----------
-
-# These must fail to resolve or else you will get deployment errors due to name conflicts
 export dns1="vmss-"$unique"."$loc1".cloudapp.azure.com"
 export dns2="vmss-"$unique"."$loc2".cloudapp.azure.com"
 export afd=$unique"afd1"
 
+# ----------- Test uniqueness ----------
+
+# These must fail to resolve or else you will get deployment errors due to name conflicts
 nslookup $dns1
 nslookup $dns2
 nslookup $afd.azurefd.net
@@ -51,7 +51,9 @@ az account set -s $SubscriptionId
 export loc=$loc1
 export locs=$locs1 
 
-#Create a Resource Group
+# ------------ Resource Group -------------------------
+
+#Create a Resource Group in Region 1 - all resources will be created in this same RG to make it easier to find and view them
 az group create -n $rg -l $loc
 
 
@@ -106,7 +108,6 @@ runcmd:
 
 # ------------- MAIN -----------------------------
 
-
 # Create a VNet to host the VM's being created in the next steps
 az network vnet create \
     -g $rg \
@@ -150,6 +151,7 @@ az vmss create \
     --vm-sku Standard_B1s \
     --nsg NSG-$locs \
     --public-ip-address-dns-name "vmss-"$unique \
+    --generate-ssh-keys \
     --verbose
 
 # Add an HTTP probe to the load balancer so it checks the backend health
@@ -180,9 +182,6 @@ az vmss list-instances -g $rg -n $locs -o table
 # If you didn't add a health probe, you will see "connection refused" at first and then "Bad Gateway" for short while and then it should start working
 # If you did add the health probe it will just return "connection timed out" until it starts working 
 
-# dns for region 1
-export dns1="vmss-"$unique"."$loc".cloudapp.azure.com"
-
 # Use this 'For' loop to test connecting to the public IP 20 times
 # You should be load balanced between the VMs
 for i in {1..20}; do curl $dns1 -m 1; echo -n $'\r\f'; sleep 0.1; done
@@ -199,18 +198,12 @@ export locs=$locs2
 
 # ---------------- Test Load Balancing in Region 2 -----------------
 
-
-# Even after instances are all deployed it will take a minute or 2 before they start accepting connections - this is while the cloud-init builds
-# You will see "connection refused" at first and then "Bad Gateway" for short while and then it should start working
-
-# Use this 'For' loop to test connecting to the public IP 20 times
-# You should be load balanced between the VMs
 for i in {1..20}; do curl $dns2 -m 1; echo -n $'\r\f'; sleep 0.1; done
 
 
 # ----------------- Front Door ---------------------------------
 
-The Azure Front Door extensions needed to be added to your Cloud Shell instance
+# The latest Azure Front Door extensions may need to be added to your Cloud Shell instance
 az extension add --name front-door
 
 # Create AFD
@@ -228,7 +221,7 @@ az network front-door backend-pool backend add -g $rg -f $afd --pool-name Defaul
 for i in {1..20}; do curl $afd.azurefd.net -m 1; echo -n $'\r\f'; sleep 0.1; done
 
 
-# ----------------- Additional ----------------------------------
+# ----------------- Additional Tasks ----------------------------------
 
 # 1 - Try opening Network Watcher in the portal and viewing the Topolgy of your Resource Group to see the components you've deployed (doesn't show AFD yet)
 # 2 - Try scaling your VMSS out or in and see Azure adjust the load-balancing automatically
