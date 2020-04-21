@@ -17,16 +17,20 @@ cd networking101
 export rg="1LbAndFrontDoor"
 
 # Unique 4 characters - used to create public DNS names 
-export unique="mawc1"
+export unique="mawc"
 
 # We will create resources in 2 Azure Regions. By default WestEurope and NorthEurope but you can use others
+# Use this command to see a list of available Regions - use the 'Name' (lowercase, single word) not the 'Display Name'
+az account list-locations --query "[].{DisplayName:displayName, Name:name}" -o table
+
 export loc1="westeurope"
-# Short code for location - will be appended to resource names
+# Create a short code (locs = location short) for location above - this will be appended to resource names to make it easier to identify which you are connecting to
 export locs1="weu"
 
 export loc2="northeurope"
 export locs2="neu"
 
+# Use these variables to build the DNS names we will use
 export dns1="vmss-"$unique"."$loc1".cloudapp.azure.com"
 export dns2="vmss-"$unique"."$loc2".cloudapp.azure.com"
 export afd=$unique"afd1"
@@ -210,7 +214,7 @@ az extension add --name front-door
 az network front-door create -g $rg -n $afd --backend-address $dns1 --interval 5 --protocol http 
 
 # Update Load Balancing rule for AFD to fail-over quicker and set the latency threshold to high enough so it will use both back-ends
-az network front-door load-balancing create -g $rg -f $afd -n DefaultLoadBalancingSettings --sample-size 1 --successful-samples-required 1 --additional-latency 500
+az network front-door load-balancing create -g $rg -f $afd -n DefaultLoadBalancingSettings --sample-size 1 --successful-samples-required 1 --additional-latency 2000
 
 # Add the 2nd Region to the back-end pool 
 az network front-door backend-pool backend add -g $rg -f $afd --pool-name DefaultBackendPool --address $dns2
