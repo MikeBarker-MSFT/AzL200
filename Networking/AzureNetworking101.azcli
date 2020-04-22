@@ -150,6 +150,7 @@ az vmss create \
     --vm-sku Standard_B1s \
     --nsg NSG-$locs \
     --public-ip-address-dns-name "vmss-"$unique \
+    --generate-ssh-keys \
     --verbose
 
 # Add an HTTP probe to the load balancer so it checks the backend health
