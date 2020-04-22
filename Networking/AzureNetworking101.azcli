@@ -20,20 +20,24 @@ export rg="1LbAndFrontDoor"
 export unique="mawc"
 
 # We will create resources in 2 Azure Regions. By default WestEurope and NorthEurope but you can use others
+# Use this command to see a list of available Regions - use the 'Name' (lowercase, single word) not the 'Display Name'
+az account list-locations --query "[].{DisplayName:displayName, Name:name}" -o table
+
 export loc1="westeurope"
-# Short code for location - will be appended to resource names
+# Create a short code (locs = location short) for location above - this will be appended to resource names to make it easier to identify which you are connecting to
 export locs1="weu"
 
 export loc2="northeurope"
 export locs2="neu"
 
-# ----------- Test uniqueness ----------
-
-# These must fail to resolve or else you will get deployment errors due to name conflicts
+# Use these variables to build the DNS names we will use
 export dns1="vmss-"$unique"."$loc1".cloudapp.azure.com"
 export dns2="vmss-"$unique"."$loc2".cloudapp.azure.com"
 export afd=$unique"afd1"
 
+# ----------- Test uniqueness ----------
+
+# These must fail to resolve or else you will get deployment errors due to name conflicts
 nslookup $dns1
 nslookup $dns2
 nslookup $afd.azurefd.net
@@ -51,7 +55,9 @@ az account set -s $SubscriptionId
 export loc=$loc1
 export locs=$locs1 
 
-#Create a Resource Group
+# ------------ Resource Group -------------------------
+
+#Create a Resource Group in Region 1 - all resources will be created in this same RG to make it easier to find and view them
 az group create -n $rg -l $loc
 
 
@@ -105,7 +111,6 @@ runcmd:
 " > cloud-init.txt
 
 # ------------- MAIN -----------------------------
-
 
 # Create a VNet to host the VM's being created in the next steps
 az network vnet create \
@@ -181,9 +186,6 @@ az vmss list-instances -g $rg -n $locs -o table
 # If you didn't add a health probe, you will see "connection refused" at first and then "Bad Gateway" for short while and then it should start working
 # If you did add the health probe it will just return "connection timed out" until it starts working 
 
-# dns for region 1
-export dns1="vmss-"$unique"."$loc".cloudapp.azure.com"
-
 # Use this 'For' loop to test connecting to the public IP 20 times
 # You should be load balanced between the VMs
 for i in {1..20}; do curl $dns1 -m 1; echo -n $'\r\f'; sleep 0.1; done
@@ -200,25 +202,19 @@ export locs=$locs2
 
 # ---------------- Test Load Balancing in Region 2 -----------------
 
-
-# Even after instances are all deployed it will take a minute or 2 before they start accepting connections - this is while the cloud-init builds
-# You will see "connection refused" at first and then "Bad Gateway" for short while and then it should start working
-
-# Use this 'For' loop to test connecting to the public IP 20 times
-# You should be load balanced between the VMs
 for i in {1..20}; do curl $dns2 -m 1; echo -n $'\r\f'; sleep 0.1; done
 
 
 # ----------------- Front Door ---------------------------------
 
-The Azure Front Door extensions needed to be added to your Cloud Shell instance
+# The latest Azure Front Door extensions may need to be added to your Cloud Shell instance
 az extension add --name front-door
 
 # Create AFD
 az network front-door create -g $rg -n $afd --backend-address $dns1 --interval 5 --protocol http 
 
 # Update Load Balancing rule for AFD to fail-over quicker and set the latency threshold to high enough so it will use both back-ends
-az network front-door load-balancing create -g $rg -f $afd -n DefaultLoadBalancingSettings --sample-size 1 --successful-samples-required 1 --additional-latency 500
+az network front-door load-balancing create -g $rg -f $afd -n DefaultLoadBalancingSettings --sample-size 1 --successful-samples-required 1 --additional-latency 2000
 
 # Add the 2nd Region to the back-end pool 
 az network front-door backend-pool backend add -g $rg -f $afd --pool-name DefaultBackendPool --address $dns2
@@ -229,7 +225,7 @@ az network front-door backend-pool backend add -g $rg -f $afd --pool-name Defaul
 for i in {1..20}; do curl $afd.azurefd.net -m 1; echo -n $'\r\f'; sleep 0.1; done
 
 
-# ----------------- Additional ----------------------------------
+# ----------------- Additional Tasks ----------------------------------
 
 # 1 - Try opening Network Watcher in the portal and viewing the Topolgy of your Resource Group to see the components you've deployed (doesn't show AFD yet)
 # 2 - Try scaling your VMSS out or in and see Azure adjust the load-balancing automatically
