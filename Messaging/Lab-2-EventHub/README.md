@@ -174,6 +174,7 @@ Read through the code and ensure you understand the structure of how the applica
     + Search for `Microsoft.Azure.EventHubs`
     + Select the package and click Install
     + Click **OK** in the Preview Changes window, and accept the licenses.
+    + Repeat the above steps to install `Microsoft.Azure.EventHubs.Processor`
 1. Open the **Program.cs** file, and paste the following:
     ```cs
     using Microsoft.Azure.EventHubs;
