@@ -375,7 +375,7 @@ First, we'll add a class that contains the logic to connect to and use Azure Sto
         {
             //Account
             CloudStorageAccount storageAccount = new CloudStorageAccount(
-                new StorageCredentials(this.settings.StorageAccount, this.settings.StorageKey), false);
+                new StorageCredentials(this.settings.StorageAccount, this.settings.StorageKey), true);
 
             //Client
             CloudTableClient tableClient = storageAccount.CreateCloudTableClient();
